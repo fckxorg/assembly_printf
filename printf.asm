@@ -7,7 +7,10 @@
 		section .text
 
 _start: 	mov	rsi, message
-		push 	0x6b
+		push 	0x64
+		push	0x65
+		push	0x64
+		
 		
 		call 	printf
 		
@@ -22,6 +25,7 @@ _start: 	mov	rsi, message
 ;--------------------------------------------------------
 printf:		push	rbp
 		mov 	rbp, rsp
+		add 	rbp, 0x10
 nextCharacter:	cmp 	byte [rsi], 0
 		je	formatLineEnd
 		
@@ -36,8 +40,7 @@ nextCharacter:	cmp 	byte [rsi], 0
 usualChar:	call 	putc
 		inc 	rsi
 		jmp 	nextCharacter
-formatLineEnd:	mov 	rsp, rbp
-		pop 	rbp
+formatLineEnd:	pop 	rbp
 		ret	
 
 ;----------------------------------------------------
@@ -60,15 +63,18 @@ formatParse:	inc 	rsi
 
 checkChar:	cmp	byte [rsi], 0x63 ; cheking if need to output char
 		jne 	parseEnd
+		
+		push 	rsi	
 		mov 	rsi, rbp
-		add	rsi, 0x10
+		add	rbp, 8
 
 		call	putc
+		pop 	rsi
 		jmp 	parseEnd
 
 parseEnd:	ret
 
 
 		section .data
-message:	db 	"Hello, %c!", 10, 0
+message:	db 	"Hello, %c%c%c!", 10, 0
 	
