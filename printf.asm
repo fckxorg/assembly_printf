@@ -21,7 +21,15 @@ _start: 	mov	rsi, message
 printf:	
 nextCharacter:	cmp 	byte [rsi], 0
 		je	formatLineEnd
-		call 	putc
+		
+		cmp 	byte [rsi], 0x25 ; checking if symbol is format specifier
+		jne	usualChar
+		call 	formatParse
+		inc 	rsi
+		jmp 	nextCharacter
+	
+
+usualChar:	call 	putc
 		inc 	rsi
 		jmp 	nextCharacter
 formatLineEnd:	ret	
@@ -38,7 +46,13 @@ putc:		mov 	rax, 1 ; syscall write
 		syscall
 		ret
 
+formatParse:	inc 	rsi
+		cmp	byte [rsi], 0x25 ;
+		jne 	checkDec
+		call 	putc
+
+checkDec:	ret
 
 		section .data
-message:	db 	"Hello, world!", 10, 0
+message:	db 	"Hello, %%!", 10, 0
 	
