@@ -7,8 +7,10 @@
 		section .text
 
 _start: 	mov	rsi, message
+		push 	0x6b
+		
 		call 	printf
-	
+		
 		mov 	rax, 60
 		xor 	rdi, rdi
 		syscall
@@ -18,12 +20,14 @@ _start: 	mov	rsi, message
 ; Enter: RSI - string address
 ; Uses:	RAX, RDX, RDI, RSI
 ;--------------------------------------------------------
-printf:	
+printf:		push	rbp
+		mov 	rbp, rsp
 nextCharacter:	cmp 	byte [rsi], 0
 		je	formatLineEnd
 		
 		cmp 	byte [rsi], 0x25 ; checking if symbol is format specifier
 		jne	usualChar
+	
 		call 	formatParse
 		inc 	rsi
 		jmp 	nextCharacter
@@ -32,7 +36,9 @@ nextCharacter:	cmp 	byte [rsi], 0
 usualChar:	call 	putc
 		inc 	rsi
 		jmp 	nextCharacter
-formatLineEnd:	ret	
+formatLineEnd:	mov 	rsp, rbp
+		pop 	rbp
+		ret	
 
 ;----------------------------------------------------
 ; Outputs ASCII-character located in provided memory
@@ -47,12 +53,22 @@ putc:		mov 	rax, 1 ; syscall write
 		ret
 
 formatParse:	inc 	rsi
-		cmp	byte [rsi], 0x25 ;
-		jne 	checkDec
+		cmp	byte [rsi], 0x25 ; checking if we need to output %
+		jne 	checkChar
 		call 	putc
+		jmp 	parseEnd
 
-checkDec:	ret
+checkChar:	cmp	byte [rsi], 0x63 ; cheking if need to output char
+		jne 	parseEnd
+		mov 	rsi, rbp
+		add	rsi, 0x10
+
+		call	putc
+		jmp 	parseEnd
+
+parseEnd:	ret
+
 
 		section .data
-message:	db 	"Hello, %%!", 10, 0
+message:	db 	"Hello, %c!", 10, 0
 	
