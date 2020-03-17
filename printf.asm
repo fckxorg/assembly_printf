@@ -38,17 +38,39 @@ nextCharacter:	cmp 	byte [rsi], 0
 		
 		cmp 	byte [rsi], 0x25 ; checking if symbol is format specifier
 		jne	usualChar
-	
+		
+		push 	rsi
+		mov	rdx, [bufferStart]
+		sub	rsi, rdx
+		mov	rdx, rsi
+		mov	rsi, [bufferStart]
+		call	printNChars
+		pop 	rsi
+		
+		
 		call 	formatParse
 		inc 	rsi
+		mov 	[bufferStart], rsi 
 		jmp 	nextCharacter
 	
 
-usualChar:	call 	putc
-		inc 	rsi
+usualChar:	inc 	rsi
 		jmp 	nextCharacter
 formatLineEnd:	pop 	rbp
 		ret	
+
+
+;----------------------------------------------------
+; Outputs part of the provided buffer with length of 
+; n symbols
+; Enter: RSI - buffer address, RDX - n characters 
+; to output
+; Uses:	RAX, RDX, RDI, RSI
+;----------------------------------------------------
+printNChars:	mov	rax, 1
+		mov	rdi, 1
+		syscall
+		ret
 
 ;----------------------------------------------------
 ; Outputs ASCII-character located in provided memory
@@ -226,6 +248,7 @@ message:	db 	"Hello,%b %d %d %x %o %u %s %% %c!", 10, 0
 greater:	db	"I am the test string", 0	
 charTable:	db	"0123456789abcdef"
 sign:		db	"-"
+bufferStart:	dd	message
 
 		section	.bss
 itoaBuff:	resb	32
