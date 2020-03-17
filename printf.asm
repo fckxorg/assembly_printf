@@ -12,6 +12,11 @@ _start: 	mov	rsi, message
 		push	15
 		push 	36
 		push 	72
+		xor	rax, rax
+		mov	rax, 0x8000000a
+		push	rax
+		xor	rax, rax
+		push 	10
 		
 		call 	printf
 		
@@ -164,7 +169,7 @@ checkHex:	cmp	byte [rsi], 0x78
 		jmp	parseEnd
 
 checkOct:	cmp	byte [rsi], 0x6f
-		jne	parseEnd
+		jne	checkInt
 		mov 	rax, [rbp]
 		add	rbp, 8
 		mov	rcx, 8
@@ -172,14 +177,43 @@ checkOct:	cmp	byte [rsi], 0x6f
 		call	itoa
 		pop	rsi
 		jmp	parseEnd
+
+checkInt:	cmp	byte [rsi], 0x64
+		jne	parseEnd
+		
+		mov 	rax, [rbp]
+		add	rbp, 8
+		push 	rax
+		
+		shr 	rax, 31
+		cmp 	rax, 1
+		jne	positive
+		push	rsi
+		mov	rsi, sign
+		call 	putc
+		pop 	rsi
+		pop	rax
+		shl	rax, 33
+		shr	rax, 33
+		push 	rax
+				
+
+positive:	pop 	rax
+		mov	rcx, 10
+		push	rsi
+		call 	itoa
+		pop 	rsi
+		ret
+		
 		
 parseEnd:	ret
 
 
 		section .data
-message:	db 	"Hello,%x %o %u %s %% %c!", 10, 0
+message:	db 	"Hello,%d %d %x %o %u %s %% %c!", 10, 0
 greater:	db	"I am the test string", 0	
 charTable:	db	"0123456789abcdef"
+sign:		db	"-"
 
 		section	.bss
 itoaBuff:	resb	32
