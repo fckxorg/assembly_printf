@@ -10,6 +10,8 @@ _start: 	mov	rsi, message
 		push	0x64
 		push 	greater
 		push	15
+		push 	36
+		push 	72
 		
 		call 	printf
 		
@@ -142,7 +144,7 @@ checkStr:	cmp	byte [rsi], 0x73
 		jmp 	parseEnd
 
 checkUint:	cmp 	byte [rsi], 0x75
-		jne	parseEnd
+		jne	checkHex
 		mov	rax, [rbp]
 		add 	rbp, 8
 		mov 	rcx, 10
@@ -150,12 +152,32 @@ checkUint:	cmp 	byte [rsi], 0x75
 		call 	itoa
 		pop	rsi
 		jmp	parseEnd
+
+checkHex:	cmp	byte [rsi], 0x78
+		jne	checkOct
+		mov 	rax, [rbp]
+		add	rbp, 8
+		mov	rcx, 16
+		push 	rsi
+		call	itoa
+		pop	rsi
+		jmp	parseEnd
+
+checkOct:	cmp	byte [rsi], 0x6f
+		jne	parseEnd
+		mov 	rax, [rbp]
+		add	rbp, 8
+		mov	rcx, 8
+		push 	rsi
+		call	itoa
+		pop	rsi
+		jmp	parseEnd
 		
 parseEnd:	ret
 
 
 		section .data
-message:	db 	"Hello,%u %s %% %c!", 10, 0
+message:	db 	"Hello,%x %o %u %s %% %c!", 10, 0
 greater:	db	"I am the test string", 0	
 charTable:	db	"0123456789abcdef"
 
