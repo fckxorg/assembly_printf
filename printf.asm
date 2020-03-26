@@ -6,57 +6,66 @@
 		
 		section .text
 
-_start: 	mov	rsi, message
-		push	0x64
+_start: 	push	0x64   ; Pushing bunch of args 		
+		push 	127    ; to stack and calling printf
+		push	0x21
+		push	100
+		push 	3802
 		push 	greater
-		push	15
-		push 	36
-		push 	72
-		xor	rax, rax
-		mov	rax, 0x8000000a
-		push	rax
-		xor	rax, rax
-		push 	10
-		push 	18
-		
+		push 	format
 		call 	printf
 		
 		mov 	rax, 60
-		xor 	rdi, rdi
+		xor 	rdi, rdi ; finishing execution
 		syscall
 
+%macro		parse_print_int 1 
+		mov	rax, [rbp]
+		add 	rbp, 8
+		mov 	rcx, %1
+		push	rsi
+		call 	itoa
+		pop	rsi
+%endmacro
+
+
 ;--------------------------------------------------------
-; Outputs format string to stdout
-; Enter: RSI - string address
-; Uses:	RAX, RDX, RDI, RSI
+; Outputs formatted string to stdout
+; Enter: push args through stack: format, then values for
+; fromat specifiers 
+; Uses:	RAX, RDX, RDI, RSI, RBP
 ;--------------------------------------------------------
 printf:		push	rbp
 		mov 	rbp, rsp
-		add 	rbp, 0x10
+		add 	rbp, 0x10 ;Setting up stack frame
+
+		mov	rsi, [rbp] ; getting format string
+		add	rbp, 8
+
 nextCharacter:	cmp 	byte [rsi], 0
 		je	formatLineEnd
 		
-		cmp 	byte [rsi], 0x25 ; checking if symbol is format specifier
+		cmp 	byte [rsi], 0x25 	; checking if symbol is format specifier
 		jne	usualChar
 		
-		push 	rsi
+		push 	rsi			; if so, printing accumulated symbols
 		mov	rdx, [bufferStart]
 		sub	rsi, rdx
 		mov	rdx, rsi
 		mov	rsi, [bufferStart]
-		call	printNChars
+		call	printNChars		; calling format parser
 		pop 	rsi
 		
 		
 		call 	formatParse
 		inc 	rsi
-		mov 	[bufferStart], rsi 
-		jmp 	nextCharacter
+		mov 	[bufferStart], rsi	; changing position of pointer to not-formatted
+		jmp 	nextCharacter		; part of string
 	
 
-usualChar:	inc 	rsi
-		jmp 	nextCharacter
-formatLineEnd:	pop 	rbp
+usualChar:	inc 	rsi			; if usual character, just increase pointer to
+		jmp 	nextCharacter		; current character in format string
+formatLineEnd:	pop 	rbp			; restore stack
 		ret	
 
 
@@ -67,8 +76,8 @@ formatLineEnd:	pop 	rbp
 ; to output
 ; Uses:	RAX, RDX, RDI, RSI
 ;----------------------------------------------------
-printNChars:	mov	rax, 1
-		mov	rdi, 1
+printNChars:	mov	rax, 1 ; system call write
+		mov	rdi, 1 ; stdout
 		syscall
 		ret
 
@@ -89,7 +98,7 @@ putc:		mov 	rax, 1 ; syscall write
 ; Enter: RSI - pointer to zero-terminated string
 ; Uses:	RDX, RAX, RDI, RSI
 ;-------------------------------------------------------
-putline:	mov	rdx, rsi
+putline:	mov	rdx, rsi 
 		call 	strlen
 		mov 	rdx, rax
 		mov 	rax, 1
@@ -105,8 +114,8 @@ putline:	mov	rdx, rsi
 ;------------------------------------------------------------
 itoa:		mov 	rbx, charTable
 		mov 	r8, 31	
-renomCycle:	cmp	rax, 0
-		je 	renomCycleEnd
+renomLoop:	cmp	rax, 0
+		je 	renomLoopEnd
 		xor	rdx, rdx
 		div	rcx
 		push	rax
@@ -116,10 +125,10 @@ renomCycle:	cmp	rax, 0
 		pop 	rax
 		dec	r8
 		xor	rdx, rdx
-		jmp 	renomCycle
+		jmp 	renomLoop
 		
 		
-renomCycleEnd:	mov 	rsi, revItoaBuff
+renomLoopEnd:	mov 	rsi, revItoaBuff
 		add 	rsi, r8
 		add 	rsi, 1
 		call 	putline
@@ -133,11 +142,11 @@ renomCycleEnd:	mov 	rsi, revItoaBuff
 ; Output: RDX - length
 ;---------------------------------------------------
 strlen:		mov 	rax, rdx
-lenCycle:	cmp 	byte [rax], 0
-		je	lenCycleEnd
+lenLoop:	cmp 	byte [rax], 0
+		je	lenLoopEnd
 		inc	rax			
-		jmp	lenCycle
-lenCycleEnd:	sub rax, rdx
+		jmp	lenLoop
+lenLoopEnd:	sub 	rax, rdx
 		ret
 ;-----------------------------------------------------
 ; Parses printf format specifiers and calls handlers
@@ -173,42 +182,22 @@ checkStr:	cmp	byte [rsi], 0x73
 
 checkUint:	cmp 	byte [rsi], 0x75
 		jne	checkHex
-		mov	rax, [rbp]
-		add 	rbp, 8
-		mov 	rcx, 10
-		push	rsi
-		call 	itoa
-		pop	rsi
+		parse_print_int 10
 		jmp	parseEnd
 
 checkHex:	cmp	byte [rsi], 0x78
 		jne	checkOct
-		mov 	rax, [rbp]
-		add	rbp, 8
-		mov	rcx, 16
-		push 	rsi
-		call	itoa
-		pop	rsi
+		parse_print_int	16
 		jmp	parseEnd
 
 checkOct:	cmp	byte [rsi], 0x6f
 		jne	checkBin
-		mov 	rax, [rbp]
-		add	rbp, 8
-		mov	rcx, 8
-		push 	rsi
-		call	itoa
-		pop	rsi
+		parse_print_int	8
 		jmp	parseEnd
 
 checkBin:	cmp	byte [rsi], 0x62
 		jne	checkInt
-		mov 	rax, [rbp]
-		add	rbp, 8
-		mov	rcx, 2
-		push 	rsi
-		call	itoa
-		pop	rsi
+		parse_print_int	2
 		jmp	parseEnd
 
 
@@ -244,11 +233,11 @@ parseEnd:	ret
 
 
 		section .data
-message:	db 	"Hello,%b %d %d %x %o %u %s %% %c!", 10, 0
-greater:	db	"I am the test string", 0	
+format:		db 	"I %s %x %d%%%c%b", 10, 0
+greater:	db	"love", 0	
 charTable:	db	"0123456789abcdef"
-sign:		db	"-"
-bufferStart:	dd	message
+sign:		db	"-" ; not ok
+bufferStart:	dd	format
 
 		section	.bss
 itoaBuff:	resb	32
