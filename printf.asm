@@ -96,10 +96,10 @@ putc:		    mov 	rax, 1                      ; syscall write
 
 ;-------------------------------------------------------
 ; Puts string to stdout
-; Enter: RSI - pointer to zero-terminated string
+; Enter: RDI - pointer to zero-terminated string
 ; Uses:	RDX, RAX, RDI, RSI
 ;-------------------------------------------------------
-putline:	    mov	    rdx, rsi 
+putline:	    mov	    rdi, rsi 
                 call 	strlen
                 mov 	rdx, rax
                 mov 	rax, 1
@@ -136,18 +136,23 @@ renomLoopEnd:	mov 	rsi, revItoaBuff
 		        ret
 		
 
+;ok with this
+; |
+; V
 ;--------------------------------------------------
 ; Finds zero-terminated string length.
-; Enter: RDX - pointer to string
-; Uses: RAX, RDX
-; Output: RDX - length
+; Enter: RDI - pointer to string
+; Uses: RAX, RDI, RCX
+; Output: RAX - length
 ;---------------------------------------------------
-strlen:		    mov 	rax, rdx
-lenLoop:	    cmp 	byte [rax], 0
-		        je	    lenLoopEnd
-		        inc	    rax			
-		        jmp	    lenLoop
-lenLoopEnd:	    sub 	rax, rdx
+strlen:		    push    rdi
+                xor     rax, rax
+                xor     rcx, rcx
+                not     rcx
+                repne   scasb
+                mov     rax, rdi
+                pop     rdi
+                sub 	rax, rdi
 		        ret
 ;-----------------------------------------------------
 ; Parses printf format specifiers and calls handlers
