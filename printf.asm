@@ -202,7 +202,7 @@ checkInt:	    cmp	    byte [rsi], 0x64
                 cmp	    rax, 0
                 jg	    positive	
                 push	rsi
-                mov	    rsi, 0x2d
+                mov	    rsi, sign
                 putc
                 pop 	rsi
                 shl	    rax, 33
@@ -223,6 +223,7 @@ parseEnd:	    ret
 format:		    db 	"I %s %x %d%%%c%b", 10, 0
 greater:	    db	"love", 0	
 charTable:	    db	"0123456789abcdef"
+sign:           db  "-"
 bufferStart:	dd	format
 
 		section	.bss
