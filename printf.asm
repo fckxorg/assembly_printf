@@ -29,6 +29,12 @@ _start: 	    push	qword 0x64   ; Pushing bunch of args
 %endmacro
 
 
+%macro  putc 0
+                mov     rdx, 1
+                call    printNChars
+%endmacro
+
+
 ;--------------------------------------------------------
 ; Outputs formatted string to stdout
 ; Enter: push args through stack: format, then values for
@@ -82,18 +88,6 @@ printNChars:    mov     rax, 1                      ; system call write
 		        syscall
 		        ret
 
-;----------------------------------------------------
-; Outputs ASCII-character located in provided memory
-; address.
-; Enter: RSI - memory address.
-; Uses:	RAX, RDX, RDI, RSI
-;----------------------------------------------------
-putc:		    mov 	rax, 1                      ; syscall write 
-                mov 	rdx, 1                      ; size of buffer to output
-                mov 	rdi, 1                      ; file descriptor of stdout
-                syscall
-                ret
-
 ;-------------------------------------------------------
 ; Puts string to stdout
 ; Enter: RDI - pointer to zero-terminated string
@@ -136,9 +130,6 @@ renomLoopEnd:	mov 	rsi, revItoaBuff
 		        ret
 		
 
-;ok with this
-; |
-; V
 ;--------------------------------------------------
 ; Finds zero-terminated string length.
 ; Enter: RDI - pointer to string
@@ -162,7 +153,7 @@ strlen:		    push    rdi
 formatParse:	inc 	rsi
                 cmp	    byte [rsi], 0x25 ; checking if we need to output %
                 jne 	checkChar
-                call 	putc
+                putc
                 jmp 	parseEnd
 
 checkChar:	    cmp	    byte [rsi], 0x63 ; cheking if need to output char
@@ -172,7 +163,7 @@ checkChar:	    cmp	    byte [rsi], 0x63 ; cheking if need to output char
                 mov 	rsi, rbp
                 add	    rbp, 8
 
-                call	putc
+                putc
                 pop 	rsi
                 jmp 	parseEnd
 
@@ -217,7 +208,7 @@ checkInt:	    cmp	    byte [rsi], 0x64
                 jg	    positive	
                 push	rsi
                 mov	    rsi, 0x2d
-                call 	putc
+                putc
                 pop 	rsi
                 shl	    rax, 33
                 shr	    rax, 33
