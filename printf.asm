@@ -159,8 +159,7 @@ checkChar:	    cmp	    byte [rsi], 0x63 ; cheking if need to output char
                 jne 	checkStr
                 
                 push 	rsi	
-                mov 	rsi, rbp
-                add	    rbp, 8
+                get_arg rsi
 
                 putc
                 pop 	rsi
@@ -170,8 +169,7 @@ checkStr:	    cmp	    byte [rsi], 0x73
 		        jne	    checkUint
 		
                 push	rsi
-                mov 	rsi, [rbp]
-                add	    rbp, 8
+                get_arg rsi
                 call 	putline
                 pop 	rsi
                 jmp 	parseEnd
@@ -200,9 +198,7 @@ checkBin:	    cmp	    byte [rsi], 0x62
 checkInt:	    cmp	    byte [rsi], 0x64
 		        jne	    parseEnd
 		
-		        mov 	rax, [rbp]
-	    	    add	    rbp, 8
-		
+	            get_arg rax	
                 cmp	    rax, 0
                 jg	    positive	
                 push	rsi
