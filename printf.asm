@@ -6,9 +6,8 @@
 		
 		section .text
 
-_start: 	    push	qword 0x64   ; Pushing bunch of args 		
-                push 	qword 127    ; to stack and calling printf
-                push	qword 0x21
+_start: 	    push 	qword 127  ; Pushing bunch of args
+                push	qword 0x21 ; to stack and calling printf
                 push	qword 100
                 push 	qword 3802
                 push 	qword greater
@@ -34,6 +33,11 @@ _start: 	    push	qword 0x64   ; Pushing bunch of args
                 call    printNChars
 %endmacro
 
+%macro  get_arg 1
+                mov     %1, [rbp]
+                add     rbp, 8
+%endmacro
+
 
 ;--------------------------------------------------------
 ; Outputs formatted string to stdout
@@ -44,9 +48,9 @@ _start: 	    push	qword 0x64   ; Pushing bunch of args
 printf:		    push	rbp
                 mov 	rbp, rsp
                 add 	rbp, 0x10                   ; setting up stack frame
+                
+                get_arg rsi                         ; getting format string
 
-                mov	    rsi, [rbp]                  ; getting format string
-                add	    rbp, 8
 
 nextCharacter:	cmp 	byte [rsi], 0
                 je	    formatLineEnd
@@ -55,13 +59,11 @@ nextCharacter:	cmp 	byte [rsi], 0
                 jne	    usualChar
                 
                 push 	rsi			                ; if so, printing accumulated symbols
-                mov	    rdx, [bufferStart]
-                sub	    rsi, rdx
+                sub	    rsi, [bufferStart]
                 mov	    rdx, rsi
                 mov	    rsi, [bufferStart]
                 call	printNChars		            ; calling format parser
                 pop 	rsi
-            
             
                 call 	formatParse
                 inc 	rsi
@@ -71,8 +73,7 @@ nextCharacter:	cmp 	byte [rsi], 0
 
 usualChar:	    inc 	rsi			                ; if usual character, just increase pointer to
 		        jmp 	nextCharacter		        ; current character in format string
-formatLineEnd:	
-                pop 	rbp			                ; restoring rbp
+formatLineEnd:	pop 	rbp			                ; restoring rbp
 		        ret	
 
 
@@ -96,9 +97,7 @@ printNChars:    mov     rax, 1                      ; system call write
 putline:	    mov	    rdi, rsi 
                 call 	strlen
                 mov 	rdx, rax
-                mov 	rax, 1
-                mov	    rdi, 1
-                syscall
+                call    printNChars
                 ret
 
 ;------------------------------------------------------------
