@@ -26,7 +26,7 @@ _start:         call    main
                 xor 	rdi, rdi ; finishing execution
                 syscall
 
-%macro	parse_print_int 1 
+%macro	parse_print_int 1
                 mov	    rax, [rbp]
                 add 	rbp, 8
                 mov 	rcx, %1
@@ -115,15 +115,15 @@ putline:	    mov	    rdi, rsi
                 ret
 
 ;------------------------------------------------------------
-; Outputs value of RAX to stdout as integer in number system 
-; defined in RCX. 
-; Eneter: RAX - number, RCX - number system
-; Uses: RDX, RBX, RSI, RDI, R0
+; Outputs value of RAX to stdout as decimal 
+; Eneter: RAX - number
+; Uses: RDX, RBX, RCX, RSI, RDI, R0
 ;------------------------------------------------------------
-itoa:		    mov 	rbx, charTable
+itoaDec:		mov 	rbx, charTable
 		        mov 	r8, buffSize	
-renomLoop:	    cmp	    rax, 0
-		        je 	    renomLoopEnd
+                mov     rcx, 10
+.renomLoop:	    cmp	    rax, 0
+		        je 	    .renomLoopEnd
 		        xor	    rdx, rdx
                 div	    rcx
                 push	rax
@@ -133,15 +133,54 @@ renomLoop:	    cmp	    rax, 0
                 pop 	rax
                 dec	    r8
                 xor	    rdx, rdx
-                jmp 	renomLoop
+                jmp 	.renomLoop
 		
 		
-renomLoopEnd:	mov 	rsi, revItoaBuff
+.renomLoopEnd:	mov 	rsi, revItoaBuff
 		        add 	rsi, r8
 		        add 	rsi, 1
 		        call 	putline
 		        ret
-		
+	
+;------------------------------------------------------------
+; Outputs value of RAX to stdout as integer in system, that
+; is a degree of 2
+; Eneter: RAX - number, RCX - number system
+; Uses: RDX, RBX,RCX, RSI, RDI, R0
+;------------------------------------------------------------
+itoaBin:	    mov     rdx, rcx                                ; creating mask
+                dec     rdx
+                bsr     rcx, rcx
+                mov     rbx, charTable
+		        mov 	r8, buffSize	
+.renomLoop:	    cmp	    rax, 0
+		        je 	    .renomLoopEnd
+                push	rax
+                and     rax, rdx
+                xlat
+                mov	    [revItoaBuff + r8], al                  ; writing to reversed buffer         
+                pop 	rax
+                dec	    r8
+                shr     rax, cl
+                jmp 	.renomLoop
+.renomLoopEnd:	mov 	rsi, revItoaBuff
+		        add 	rsi, r8
+		        add 	rsi, 1
+		        call 	putline
+		        ret	
+
+;===============================================
+; Wrapper-selector for itoaDec and itoaBin
+; For the list of parameters look to itoaBin
+; and itoaDec
+;================================================
+itoa:          cmp      rcx, 10
+               jne      binRel
+               call     itoaDec
+               ret
+binRel:        call     itoaBin
+               ret
+
 
 ;--------------------------------------------------
 ; Finds zero-terminated string length.
@@ -238,6 +277,7 @@ format:		    db 	"I %s %x %d%%%c%b%s%c", 10, 0
 greater:	    db	"love", 0	
 edastr:         db  ", especially in Phystech.Bio!", 0
 charTable:	    db	"0123456789abcdef"
+degTable:       db  1, 2, 4
 sign:           db  "-"
 bufferStart:	dd	format
 
