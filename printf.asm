@@ -6,10 +6,13 @@
 		
 		section .text
 
-main: 	        push    qword 0x21
+buffSize        equ     31
+signShift       equ     33
+
+main: 	        push    qword '!'
                 push    qword edastr
                 push 	qword 127  ; Pushing bunch of args
-                push	qword 0x21 ; to stack and calling printf
+                push	qword '!' ; to stack and calling printf
                 push	qword 100
                 push 	qword 3802
                 push 	qword greater
@@ -118,7 +121,7 @@ putline:	    mov	    rdi, rsi
 ; Uses: RDX, RBX, RSI, RDI, R0
 ;------------------------------------------------------------
 itoa:		    mov 	rbx, charTable
-		        mov 	r8, 31	
+		        mov 	r8, buffSize	
 renomLoop:	    cmp	    rax, 0
 		        je 	    renomLoopEnd
 		        xor	    rdx, rdx
@@ -216,8 +219,8 @@ checkInt:	    cmp	    byte [rsi], 'd'
                 mov	    rsi, sign
                 putc
                 pop 	rsi
-                shl	    rax, 33
-                shr	    rax, 33
+                shl	    rax, signShift
+                shr	    rax, signShift
                         
 
 positive:	    mov 	rcx, 10
