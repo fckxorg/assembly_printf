@@ -7,7 +7,7 @@
 		section .text
 
 main: 	        push    qword 0x21
-                push    qword 0x21
+                push    qword edastr
                 push 	qword 127  ; Pushing bunch of args
                 push	qword 0x21 ; to stack and calling printf
                 push	qword 100
@@ -170,9 +170,9 @@ checkChar:	    cmp	    byte [rsi], 'c' ; cheking if need to output char
                 jne 	checkStr
                 
                 push 	rsi	
-                get_arg rsi
-
+                mov     rsi, rbp
                 putc
+                add     rbp, 8
                 pop 	rsi
                 jmp 	parseEnd
 
@@ -231,8 +231,9 @@ parseEnd:	    ret
 
 
 		section .data
-format:		    db 	"I %s %x %d%%%c%b%c%c", 10, 0
+format:		    db 	"I %s %x %d%%%c%b%s%c", 10, 0
 greater:	    db	"love", 0	
+edastr:         db  ", especially in Phystech.Bio!", 0
 charTable:	    db	"0123456789abcdef"
 sign:           db  "-"
 bufferStart:	dd	format
