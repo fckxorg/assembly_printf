@@ -6,14 +6,19 @@
 		
 		section .text
 
-_start: 	    push 	qword 127  ; Pushing bunch of args
+main: 	        push    qword 0x21
+                push    qword 0x21
+                push 	qword 127  ; Pushing bunch of args
                 push	qword 0x21 ; to stack and calling printf
                 push	qword 100
                 push 	qword 3802
                 push 	qword greater
                 push 	qword format
                 call 	printf
-                
+                add     rsp, 0x40
+                ret
+
+_start:         call    main                
                 mov 	rax, 60
                 xor 	rdi, rdi ; finishing execution
                 syscall
@@ -43,12 +48,14 @@ _start: 	    push 	qword 127  ; Pushing bunch of args
 ; Outputs formatted string to stdout
 ; Enter: push args through stack: format, then values for
 ; fromat specifiers 
-; Uses:	RAX, RDX, RDI, RSI, RBP
 ;--------------------------------------------------------
 printf:		    push	rbp
                 mov 	rbp, rsp
                 add 	rbp, 0x10                   ; setting up stack frame
-                
+                push    rdi 
+                push    rsi 
+                push    r8    
+
                 get_arg rsi                         ; getting format string
 
 
@@ -73,7 +80,11 @@ nextCharacter:	cmp 	byte [rsi], 0
 
 usualChar:	    inc 	rsi			                ; if usual character, just increase pointer to
 		        jmp 	nextCharacter		        ; current character in format string
-formatLineEnd:	pop 	rbp			                ; restoring rbp
+formatLineEnd:	pop 	r8 
+                pop     rsi 
+                pop     rdi 
+                pop     rbp	
+                
 		        ret	
 
 
@@ -115,7 +126,7 @@ renomLoop:	    cmp	    rax, 0
                 push	rax
                 mov 	rax, rdx	
                 xlat
-                mov	    [revItoaBuff + r8], al
+                mov	    [revItoaBuff + r8], al                  ; writing to reversed buffer         
                 pop 	rax
                 dec	    r8
                 xor	    rdx, rdx
@@ -150,12 +161,12 @@ strlen:		    push    rdi
 ; Enter: RSI - pointer to format specifier
 ;----------------------------------------------------
 formatParse:	inc 	rsi
-                cmp	    byte [rsi], 0x25 ; checking if we need to output %
+                cmp	    byte [rsi], '%' ; checking if we need to output %
                 jne 	checkChar
                 putc
                 jmp 	parseEnd
 
-checkChar:	    cmp	    byte [rsi], 0x63 ; cheking if need to output char
+checkChar:	    cmp	    byte [rsi], 'c' ; cheking if need to output char
                 jne 	checkStr
                 
                 push 	rsi	
@@ -165,7 +176,7 @@ checkChar:	    cmp	    byte [rsi], 0x63 ; cheking if need to output char
                 pop 	rsi
                 jmp 	parseEnd
 
-checkStr:	    cmp	    byte [rsi], 0x73
+checkStr:	    cmp	    byte [rsi], 's'
 		        jne	    checkUint
 		
                 push	rsi
@@ -174,28 +185,28 @@ checkStr:	    cmp	    byte [rsi], 0x73
                 pop 	rsi
                 jmp 	parseEnd
 
-checkUint:	    cmp     byte [rsi], 0x75
+checkUint:	    cmp     byte [rsi], 'u'
                 jne	    checkHex
                 parse_print_int 10
                 jmp	    parseEnd
 
-checkHex:	    cmp	    byte [rsi], 0x78
+checkHex:	    cmp	    byte [rsi], 'x'
                 jne	    checkOct
                 parse_print_int	16
                 jmp	    parseEnd
 
-checkOct:	    cmp	    byte [rsi], 0x6f
+checkOct:	    cmp	    byte [rsi], 'o'
                 jne	    checkBin
                 parse_print_int	8
                 jmp	    parseEnd
 
-checkBin:	    cmp	    byte [rsi], 0x62
+checkBin:	    cmp	    byte [rsi], 'b'
                 jne	    checkInt
                 parse_print_int	2
                 jmp	    parseEnd
 
 
-checkInt:	    cmp	    byte [rsi], 0x64
+checkInt:	    cmp	    byte [rsi], 'd'
 		        jne	    parseEnd
 		
 	            get_arg rax	
@@ -220,7 +231,7 @@ parseEnd:	    ret
 
 
 		section .data
-format:		    db 	"I %s %x %d%%%c%b", 10, 0
+format:		    db 	"I %s %x %d%%%c%b%c%c", 10, 0
 greater:	    db	"love", 0	
 charTable:	    db	"0123456789abcdef"
 sign:           db  "-"
