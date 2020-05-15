@@ -18,7 +18,7 @@ main: 	        push    qword '!'
                 push 	qword greater
                 push 	qword format
                 call 	printf
-                add     rsp, 0x40
+                add     rsp, 8d * 8d   ;cleaning up stack
                 ret
 
 _start:         call    main                
