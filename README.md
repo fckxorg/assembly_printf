@@ -10,10 +10,7 @@ This example uses cdecl calling convention.
 
 Calling conventions:
 ![8086](/images/8086_conventions.png)
-Format: ![Alt Text](url)
 
-![IA-32](/images/IA-32_conventions.png)
-Format: ![Alt Text](url)
+![IA-32](/images/IA32_conventions.png)
 
 ![x86-64](/images/x86-64_conventions.png)
-Format: ![Alt Text](url)
