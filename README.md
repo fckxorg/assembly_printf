@@ -6,7 +6,30 @@ NASM implemented `printf` C function.
 2. `xlat` - get byte from table located by address in `rbx`, according to index in `al`
 3. `ret imm16` - return to calling procedure and pop `imm16` bytes from stack. Useful for calling conventions with callee-cleanup
 
-This example uses cdecl calling convention.
+Also, it may be useful to know about *jump tables*.
+Short example:
+```
+        jmp     qword [jmp_table + eax * 8 - 8]
+
+case1:  mov     rsi, 1
+        jmp end
+
+case2:  mov     rsi, 2
+        jmp end
+
+case3:  mov     rsi, 3
+        jmp end
+
+...
+        .section data
+jmp_table:
+dq      case1
+dq      case2
+dq      case3
+``` 
+If your data is bleak, you can use `dup` in your `dq` to fill in spaces.
+
+This printf example uses cdecl calling convention.
 
 Calling conventions:
 ![8086](/images/8086_conventions.png)
