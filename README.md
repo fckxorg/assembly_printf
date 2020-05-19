@@ -39,3 +39,4 @@ This printf example uses cdecl calling convention.
 ![IA-32](/images/IA32_conventions.png)
 
 ![x86-64](/images/x86-64_conventions.png)
+Src: Table is based on information from Agner Fog's "Calling conventions for different C++ compilers and operating systems", created in published on https://en.wikipedia.org/wiki/X86_calling_conventions 
