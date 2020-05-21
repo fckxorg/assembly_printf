@@ -203,54 +203,50 @@ strlen:		    push    rdi
 ; Enter: RSI - pointer to format specifier
 ;----------------------------------------------------
 formatParse:	inc 	rsi
-                cmp	    byte [rsi], '%' ; checking if we need to output %
-                jne 	checkChar
-                putc
-                jmp 	parseEnd
+                xor     rax, rax
+                mov     al, byte [rsi]
 
-checkChar:	    cmp	    byte [rsi], 'c' ; cheking if need to output char
-                jne 	checkStr
+                cmp     al, 'x'
+                ja      default_jmp
                 
+                jmp     qword [jmp_table + eax * 8 - '%' * 8] 
+
+percent:        putc
+                ret
+
+char:	    
                 push 	rsi	
                 mov     rsi, rbp
                 putc
                 add     rbp, 8
                 pop 	rsi
-                jmp 	parseEnd
+                ret
 
-checkStr:	    cmp	    byte [rsi], 's'
-		        jne	    checkUint
-		
+string:	    
                 push	rsi
                 get_arg rsi
                 call 	putline
                 pop 	rsi
-                jmp 	parseEnd
+                ret
 
-checkUint:	    cmp     byte [rsi], 'u'
-                jne	    checkHex
+udecimal:	    
                 parse_print_int 10
-                jmp	    parseEnd
+                ret
 
-checkHex:	    cmp	    byte [rsi], 'x'
-                jne	    checkOct
+hex:	   
                 parse_print_int	16
-                jmp	    parseEnd
+                ret
 
-checkOct:	    cmp	    byte [rsi], 'o'
-                jne	    checkBin
+oct:	    
                 parse_print_int	8
-                jmp	    parseEnd
+                ret
 
-checkBin:	    cmp	    byte [rsi], 'b'
-                jne	    checkInt
+binary:	    
                 parse_print_int	2
-                jmp	    parseEnd
+                ret
 
 
-checkInt:	    cmp	    byte [rsi], 'd'
-		        jne	    parseEnd
-		
+decimal:	    
 	            get_arg rax	
                 cmp	    rax, 0
                 jg	    positive	
@@ -269,7 +265,7 @@ positive:	    mov 	rcx, 10
 		        ret
 		
 		
-parseEnd:	    ret
+default_jmp:	ret
 
 
 		section .data
@@ -278,8 +274,23 @@ greater:	    db	"love", 0
 edastr:         db  ", especially in Phystech.Bio!", 0
 charTable:	    db	"0123456789abcdef"
 degTable:       db  1, 2, 4
+bufferStart:	dq	format
 sign:           db  "-"
-bufferStart:	dd	format
+
+jmp_table:      dq      percent
+                times 60 dq default_jmp
+                dq      binary
+                dq      char
+                dq      decimal
+                times 10 dq default_jmp
+                dq      oct
+                times 3  dq default_jmp
+                dq      string
+                dq      default_jmp
+                dq      udecimal
+                times 2  dq default_jmp
+                dq      hex
+
 
 		section	.bss
 itoaBuff:	    resb	32
